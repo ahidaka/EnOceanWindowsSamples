@@ -1,0 +1,22 @@
+﻿<Window x:Class="EnOceanSample.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Closing="MainWindow_Closing"
+        Title="MainWindow" Height="640" Width="830">
+    <Grid Height="610" Width="715">
+        <Label Content="温度" Height="60" HorizontalAlignment="Left" Margin="37,33,0,0" Name="labelTemperature" VerticalAlignment="Top" Width="276"  FontSize="40" FontWeight="Bold" HorizontalContentAlignment="Center" />
+        <Label Content="スイッチ" Height="60" HorizontalAlignment="Left" Margin="50,0,0,327" Name="labelSwitch" VerticalAlignment="Bottom" Width="276"  FontSize="40" FontWeight="Bold" HorizontalContentAlignment="Center" />
+        <Label Content=""     Height="39" HorizontalAlignment="Left" Margin="37,538,0,0" Name="labelEEP" VerticalAlignment="Top" Width="276" FontSize="18" Foreground="White"  VerticalContentAlignment="Center" DataContext="{Binding}" Background="White" />
+        <ListBox Height="37" HorizontalAlignment="Left" Margin="393,108,0,0" Name="portSelect" VerticalAlignment="Top" Width="92" Padding="5" FontSize="13" SelectionChanged="listBox1_SelectionChanged" DataContext="{Binding}" ItemsSource="{Binding}" />
+        <Button Content="Start" FontSize="24" Height="60" HorizontalAlignment="Left" Margin="393,33,0,0" Name="button1" VerticalAlignment="Top" Width="286" Click="button1_Click" />
+        <TextBox Height="37" HorizontalAlignment="Left" Margin="491,108,0,0" Name="textBox1" VerticalAlignment="Top" Width="188" FontSize="16" />
+        <TextBox Height="354" HorizontalAlignment="Left" Margin="393,223,0,0" Name="textBox2" VerticalAlignment="Top" Width="286" VerticalScrollBarVisibility="Auto" />
+        <Rectangle Height="96" HorizontalAlignment="Left" Margin="37,402,0,0" Name="rectangleLeft" Stroke="#8C000000" VerticalAlignment="Top" Width="96" Fill="Lime" />
+        <Rectangle Height="96" HorizontalAlignment="Left" Margin="217,402,0,0" Name="rectangleRight" Stroke="#8C000000" VerticalAlignment="Top" Width="96" Fill="Red" />
+        <TextBox FontSize="20" Height="37" HorizontalAlignment="Left" Margin="37,108,0,0" Name="TempID" VerticalAlignment="Top" Width="192" Text="0" />
+        <TextBox FontSize="20" Height="37" HorizontalAlignment="Left" Margin="37,304,0,0" Name="SwitchID" VerticalAlignment="Top" Width="192" Text="0" />
+        <CheckBox Content="Use Filter" Height="32" HorizontalAlignment="Left" Margin="393,171,0,0" Name="cbFilter" VerticalAlignment="Top" Width="136" FontSize="20" />
+        <Label Content="Temp ID" HorizontalAlignment="Left" Height="37" Margin="234,108,0,0" VerticalAlignment="Top" Width="92" FontSize="18"/>
+        <Label Content="SW ID" HorizontalAlignment="Left" Height="37" Margin="234,304,0,0" VerticalAlignment="Top" Width="92" FontSize="18"/>
+    </Grid>
+</Window>
