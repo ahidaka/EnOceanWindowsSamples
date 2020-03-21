@@ -1,0 +1,16 @@
+﻿<Window x:Class="CO2Sensor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mylib="clr-namespace:CO2Sensor"
+        Title="MainWindow" Height="640" Width="880">
+    <Grid Height="610" Width="880">
+        <Label Content="CO2 Sensor" Height="60" HorizontalAlignment="Left" Margin="50,12,0,0" Name="labelCO2" VerticalAlignment="Top" Width="436"  FontSize="40" FontWeight="Bold" HorizontalContentAlignment="Center" />
+        <ListBox Height="36" HorizontalAlignment="Left" Margin="728,158,0,0" Name="portSelect" VerticalAlignment="Top" Width="104" Padding="5" FontSize="13" SelectionChanged="listBox1_SelectionChanged" DataContext="{Binding}" ItemsSource="{Binding}" />
+        <Button Content="Start" FontSize="24" Height="48" HorizontalAlignment="Left" Margin="592,90,0,0" Name="button1" VerticalAlignment="Top" Width="140" Click="button1_Click" />
+        <Button Content="Charge" FontSize="18" Height="48" HorizontalAlignment="Left" Margin="752,90,0,0" Name="button2" VerticalAlignment="Top" Width="80" Click="button2_Click" />
+        <TextBox Height="28" HorizontalAlignment="Left" Margin="592,162,0,0" Name="textBox1" VerticalAlignment="Top" Width="110" TextChanged="textBox1_TextChanged" FontSize="13" />
+        <TextBox Height="356" HorizontalAlignment="Left" Margin="592,209,0,0" Name="textBox2" VerticalAlignment="Top" Width="240" TextChanged="textBox2_TextChanged" VerticalScrollBarVisibility="Auto" />
+        <mylib:GraphPart x:Name="gpX" HorizontalAlignment="Left" Margin="60,90,0,0" VerticalAlignment="Top" VerticalLevel="1.0" UnitWidth="50" Height="475" Width="420"/>
+    </Grid>
+
+</Window>
