@@ -8,7 +8,7 @@
         <Label Content="温度" Height="48" HorizontalAlignment="Left" Margin="37,170,0,0" Name="labelTemperature" VerticalAlignment="Top" Width="276"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
         <Label Content="湿度" Height="48" HorizontalAlignment="Left" Margin="37,220,0,0" Name="labelHumidity" VerticalAlignment="Top" Width="276"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
         <Label Content="照度" Height="48" HorizontalAlignment="Left" Margin="37,270,0,0" Name="labelLighten" VerticalAlignment="Top" Width="276"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
-        <Label Content="加速度" Height="48" HorizontalAlignment="Left" Margin="1,320,0,0" Name="labelAccel" VerticalAlignment="Top" Width="366"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
+        <Label Content="加速度" Height="48" HorizontalAlignment="Left" Margin="1,320,0,0" Name="labelAccel" VerticalAlignment="Top" Width="370"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
         <Label Content="電波強度" Height="48" HorizontalAlignment="Left" Margin="37,370,0,0" Name="labelRadio" VerticalAlignment="Top" Width="276"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
         <Label Content="開閉" Height="48" HorizontalAlignment="Left" Margin="25,420,0,0" Name="labelContact" VerticalAlignment="Top" Width="120"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
         <Label Content="加速度状態" Height="48" HorizontalAlignment="Left" Margin="175,420,0,0" Name="labelAStatus" VerticalAlignment="Top" Width="180"  FontSize="28" FontWeight="Bold" HorizontalContentAlignment="Center" />
@@ -20,9 +20,9 @@
         <TextBox Height="354" HorizontalAlignment="Left" Margin="393,223,0,0" Name="textBox2" VerticalAlignment="Top" Width="286" VerticalScrollBarVisibility="Auto" />
         <Rectangle Height="96" HorizontalAlignment="Left" Margin="37,480,0,0" Name="rectangleContact" Stroke="#8C000000" VerticalAlignment="Top" Width="96" Fill="Lime" />
         <Rectangle Height="96" HorizontalAlignment="Left" Margin="217,480,0,0" Name="rectangleAccel" Stroke="#8C000000" VerticalAlignment="Top" Width="96" Fill="Red" />
-        <TextBox FontSize="20" Height="37" HorizontalAlignment="Left" Margin="37,108,0,0" Name="multiID" VerticalAlignment="Top" Width="192" Text="0" />
+        <TextBox FontSize="20" Height="37" HorizontalAlignment="Left" Margin="37,108,0,0" Name="multiID" VerticalAlignment="Top" Width="192" Text="0" TextChanged="multiID_TextChanged"/>
         <CheckBox Content="Use Filter" Height="32" HorizontalAlignment="Left" Margin="393,171,0,0" Name="cbFilter" VerticalAlignment="Top" Width="136" FontSize="20" />
-        <CheckBox Content="Auto Detect" Height="32" HorizontalAlignment="Left" Margin="550,171,0,0" Name="cbAuto" VerticalAlignment="Top" Width="136" FontSize="20" />
+        <CheckBox Content="Auto Detect" Height="32" HorizontalAlignment="Left" Margin="550,171,0,0" Name="cbAuto" VerticalAlignment="Top" Width="136" FontSize="20" IsChecked="True" />
         <Label Content="Sensor ID" HorizontalAlignment="Left" Height="37" Margin="234,108,0,0" VerticalAlignment="Top" Width="92" FontSize="18"/>
     </Grid>
 </Window>
