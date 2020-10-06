@@ -51,35 +51,20 @@ namespace DefaultMultiSensor
         private System.IO.Ports.SerialPort serialPort1;
 
         /// <summary>
-        /// Multi-Sensor defines
+        /// Restrictions for Multi-Sensor
         /// </summary>
         const string sensorEEP = "D2-14-41";
         const int sensorDataLength = 15;
         const int bufferLength = 128;
-
-
-        /// <summary>
-        /// Start time settings
-        /// </summary>
-        //private const bool defaultFilterStatus = true;
-        //private const bool defaultAutoStatus = true;
         /// 
 
-        //
-        // static status
-        //
-        private string registeredID; //registered ID
-        private string registeredEEP;
+        private uint sensorID;
 
-        //
-        // runtime status
-        //
-        private uint sensorID; //registered ID
+        private string accelLine;
+
         private bool filterStatus;
         private bool autoStatus;
         private bool eepRegistered;
-        //private bool lastAutoStatus;
-        //private bool lastFilterStatus;
 
         enum RectColor
         {
@@ -89,7 +74,6 @@ namespace DefaultMultiSensor
             R_White = 0x08
         };
 
-        private string accelLine;
         private byte rectangleControl;
 
         private const string labelTemperatureTitle = "温度";
@@ -157,8 +141,6 @@ namespace DefaultMultiSensor
             datafields = Datafields.Initializer();
 
             sensorID = 0;
-            //lastFilterStatus = defaultFilterStatus;
-            //lastAutoStatus = defaultAutoStatus;
             RectangleClear();
             working = true;
 
@@ -261,15 +243,13 @@ namespace DefaultMultiSensor
             bool gotHeader = false;
             byte crc8h;
             byte crc8d;
-            byte[] actualData;
+            byte[] data;
             byte[] header;
             byte[] id;
             uint iID;
             int telType = 0; // Telegram type
             int i;
-            int actualDataLength;
-            int eb0 = 0; // for RPS:F6-02-04
-            int db0 = 0; // for RPS:F6-02-04
+            int nu = 0;
             int readLength;
             int radioStrength;
             bool validTelegram = false;
@@ -364,7 +344,8 @@ namespace DefaultMultiSensor
                 //if (packetType == PacketType.Radio || packetType == PacketType.RadioAdvanced)
                 if (packetType == PacketType.RadioAdvanced)
                 {
-                    // We accept only "ERP2 on ESP3" format
+                    // We accept only ERP2 on ESP3
+                    data = new byte[bufferLength];
                     id = new byte[4];
                     teachIn = TeachIn._NO;
                     telType = readBuffer[0];
@@ -387,11 +368,10 @@ namespace DefaultMultiSensor
                             validTelegram = true;
                             teachIn = TeachIn._UTE;
                             break;
-                        case 0x20: //Src 32bit RPS, Data, backup
-                            eb0 = (readBuffer[leadings + dataOffset] >> 7) & 0x01;
-                            db0 = (byte)(readBuffer[leadings + dataOffset] & 0x0F);
+                        case 0x20: //Src 32bit RPS, Data
+                            nu = (readBuffer[leadings + dataOffset] >> 7) & 0x01;
+                            data[0] = (byte)(readBuffer[leadings + dataOffset] & 0x0F);
                             validTelegram = true;
-                            Debug.WriteLine($"{eb0:X} {db0:X}");
                             teachIn = TeachIn._RPS;
                             break;
                         case 0x21: //Src 32bit 1BS, Data
@@ -420,16 +400,14 @@ namespace DefaultMultiSensor
 
                     iID = (uint)BitConverter.ToInt32(id, 0);
 
-                    actualDataLength = dataLength - leadings - 1;
-                    actualData = new byte[actualDataLength];
-                    for (i = 0; i < actualDataLength; i++)
+                    for (i = 0; i < (dataLength - leadings); i++)
                     {
-                        actualData[i] = readBuffer[leadings + dataOffset + i];
+                        data[i] = readBuffer[leadings + dataOffset + i];
                     }
                 }
                 else
                 {
-                    //// responses have to come many times
+                    //// response have to come
                     ////Debug.WriteLine("Unknown packetType = {0:X}", packetType);
                     return;
                 }
@@ -447,27 +425,21 @@ namespace DefaultMultiSensor
                 }
                 else
                 {
-                    if (registeredID != "" && registeredEEP != "")
-                    {
-                        runMode = RunMode.Operation;
-                    }
-                    else {
-                        // Auto Detect ==> Teach In
-                        runMode = autoStatus ? RunMode.Register: RunMode.Monitor;
-                    }
+                    // Auto Detect ==> Teach In
+                    runMode = autoStatus ? RunMode.Register : RunMode.Monitor;
                 }
 
                 switch (runMode)
                 {
                     case RunMode.Monitor:
-                        DisplayTelegram(iID, telType, actualData, radioStrength);
+                        DisplayTelegram(iID, telType, data);
                         DisplayDbm(radioStrength);
                         break;
                     case RunMode.Register:
                         if (!eepRegistered && teachIn != TeachIn._NO)
                         {
-                            DisplayTelegram(iID, telType, actualData, radioStrength);
-                            eepRegistered = TeachInTelegram(iID, telType, actualData);
+                            DisplayTelegram(iID, telType, data);
+                            eepRegistered = TeachInTelegram(iID, telType, data);
                             DisplayDbm(radioStrength);
                         }
                         break;
@@ -480,8 +452,8 @@ namespace DefaultMultiSensor
                             }
                             else
                             {
-                                DisplayVldData(actualData);
-                                DisplayTelegram(iID, telType, actualData, radioStrength);
+                                DisplayVldData(data);
+                                DisplayTelegram(iID, telType, data);
                                 DisplayDbm(radioStrength);
                             }
                         }
@@ -494,29 +466,27 @@ namespace DefaultMultiSensor
             }
         }
 
-        void DisplayTelegram(uint id, int telType, byte[] data, int strength)
+        void DisplayTelegram(uint id, int telType, byte[] data)
         {
             string line;
 
-            line = String.Format("[{0:X8}:{1:X2}]", id, telType);
-            foreach (byte b in data)
-            {
-                line += String.Format(" {0:X2}", b);
-            }
-            line += " -" + strength.ToString();
+            line = String.Format("{0:X8} {1:X2} {2:X2} {3:X2} {4:X2} {5:X2} {6:X2} {7:X2}",
+                id, telType, data[0], data[1], data[0], data[1], data[0], data[1]);
 
             Dispatcher.BeginInvoke(
                 new DispatcherOperationCallback(TextBox2Text),
                     line + "\r\n");
         }
 
-        void RegisterId(uint id, string eep)
+        void RegisterId(uint id)
         {
-            registeredID = id.ToString("X8");
-            registeredEEP = eep;
-            Debug.WriteLine("RegisterId=" + registeredID);
+            sensorID = id;
+            //
+            // Display ID
+            //
             Dispatcher.BeginInvoke(
-                    new DispatcherOperationCallback(MultiIdText), registeredID);
+                    new DispatcherOperationCallback(MultiIdText),
+                        sensorID.ToString());
         }
 
         bool TeachInTelegram(uint id, int telType,  byte[] data)
@@ -561,7 +531,7 @@ namespace DefaultMultiSensor
                 if (strEEP == sensorEEP)
                 {
                     DisplayEEP((int)rorg, (int)func, (int)type, (int)manID);
-                    RegisterId(id, strEEP);
+                    RegisterId(id);
                     registered = true;
                 }
             }
@@ -938,20 +908,16 @@ namespace DefaultMultiSensor
                 textBox2.Text = "";
                 RectangleClear();
 
-                sensorID = 0;
-                if (multiID.Text != "")
+                try
                 {
-                    try
-                    {
-                        sensorID = Convert.ToUInt32(multiID.Text, 16);
-                    }
-                    catch (Exception ex)
-                    {
-                        string s = "sensorID:" + ex.Message;
-                        Debug.Print(s);
-                        Dispatcher.BeginInvoke(
-                                new DispatcherOperationCallback(TextBox2Text), s + "\r\n");
-                    }
+                    sensorID = Convert.ToUInt32(multiID.Text, 16);
+                }
+                catch (Exception ex)
+                {
+                    string s = "sensorID:" + ex.Message;
+                    Debug.Print(s);
+                    Dispatcher.BeginInvoke(
+                            new DispatcherOperationCallback(TextBox2Text), s + "\r\n");
                 }
 
                 if (sensorID != 0)
@@ -987,25 +953,11 @@ namespace DefaultMultiSensor
                             labelContact.Content =
                             labelAStatus.Content = "";
 
-                        if (registeredEEP == "")
-                        {
-                            labelEEP.Background = new SolidColorBrush(Colors.White);
-                            labelEEP.Content = "";
-                        }
-                        else
-                        {
-                            cbAuto.IsChecked = false;
-                        }
-                        //cbFilter.IsChecked = lastFilterStatus;
-                        //cbAuto.IsChecked = lastAutoStatus;
+                        labelEEP.Background = new SolidColorBrush(Colors.White);
+                        labelEEP.Content = "";
+
                         cbFilter.IsEnabled = false;
                         cbAuto.IsEnabled = false;
-
-                        if (sensorID == 0)
-                        {
-                            eepRegistered = false;
-                        }
-
                     }
                     catch
                     {
@@ -1020,6 +972,7 @@ namespace DefaultMultiSensor
                 {
                     textBox1.Text = "Error! Please input COM port name.";
                 }
+                //SetFilter((bool)cbFilter.IsChecked);
                 SetFilter(filterStatus);
             }
             else
@@ -1039,9 +992,6 @@ namespace DefaultMultiSensor
 
                 cbFilter.IsEnabled = true;
                 cbAuto.IsEnabled = true;
-                //cbFilter.IsChecked = lastFilterStatus;
-                //cbAuto.IsChecked = lastAutoStatus;
-
             }
         }
 
@@ -1075,17 +1025,6 @@ namespace DefaultMultiSensor
         {
             string s = string.Format(format, path);
             Debug.WriteLine(s);
-        }
-
-        private void multiID_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (multiID.Text != registeredID)
-            {
-                //Clear EEP();
-                eepRegistered = false;
-                registeredEEP = "";
-                labelEEPText(null);
-            }
         }
     }
 
@@ -1315,7 +1254,7 @@ namespace DefaultMultiSensor
                 if (pos >= SZ)
                 {
                     pos = 0;
-                    dataInArray++;
+                    posInArray++;
                 }
             }
             return ul;
