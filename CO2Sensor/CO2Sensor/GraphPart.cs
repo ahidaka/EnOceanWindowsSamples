@@ -23,10 +23,11 @@ namespace CO2Sensor
         public int UnitWidth { get; set; }
         public Color Co2DotColor { get; set; }
         public Color Co2AxisColor { get; set; }
-        public Color ChargeDotColor { get; set; }
-        public Color ChargeAxisColor { get; set; }
+        public Color HumidDotColor { get; set; }
+        public Color TempDotColor { get; set; }
+        public Color HumidAxisColor { get; set; }
         public Color HorizontalAxisColor { get; set; }
-        public bool ShowChargeLevel { get; set; }
+        public bool ShowHumidLevel { get; set; }
 
         /// <summary>
         /// 0を真ん中にしたい  ⇒ 0.5
@@ -36,36 +37,41 @@ namespace CO2Sensor
         public double VerticalLevel { get; set; }
 
         private List<Point> co2Points = new List<Point>();
-        private List<Point> chargePoints = new List<Point>();
+        private List<Point> humidPoints = new List<Point>();
+        private List<Point> tempPoints = new List<Point>();
         private double co2MinY = 0.0;
         private double co2MaxY = 0.0;
         private double co2StepY = 0.0;
-        private double chargeMinY = 0.0;
-        private double chargeMaxY = 0.0;
-        private double chargeStepY = 0.0;
+        private double humidMinY = 0.0;
+        private double humidMaxY = 0.0;
+        private double humidStepY = 0.0;
+        //private double tempMinY = 0.0;
+        //private double tempMaxY = 0.0;
+        //private double tempStepY = 0.0;
         private double widthPixels;
         private int co2TextY;
-        private int chargeTextY;
+        private int humidTextY;
 
         public void Initialize()
         {
-            Co2DotColor         = Colors.DarkGray;
-            ChargeDotColor      = Colors.Magenta;
-            Co2AxisColor        = Colors.Gray;
-            ChargeAxisColor     = Colors.LightPink;
+            Co2DotColor = Colors.DarkGray;
+            HumidDotColor = Colors.Cyan;
+            TempDotColor = Colors.Magenta;
+            Co2AxisColor = Colors.Gray;
+            HumidAxisColor = Colors.LightPink;
             HorizontalAxisColor = Colors.SandyBrown;
 
-            ShowChargeLevel = false;
+            ShowHumidLevel = false;
 
             co2MinY = 0.0;
             co2MaxY = 2500.0;
             co2StepY = 500.0D;
             co2TextY = (int)(co2MaxY + co2StepY / (co2MaxY / co2StepY)); 
 
-            chargeMinY = 0.0;
-            chargeMaxY = 100.0;
-            chargeStepY = 20.0D;
-            chargeTextY = (int)(chargeMaxY + chargeStepY / (chargeMaxY / chargeStepY)); 
+            humidMinY = 0.0;
+            humidMaxY = 100.0;
+            humidStepY = 20.0D;
+            humidTextY = (int)(humidMaxY + humidStepY / (humidMaxY / humidStepY)); 
 
             UnitWidth = 60;
             VerticalLevel = 1.0;
@@ -75,7 +81,8 @@ namespace CO2Sensor
         {
             Children.Clear();
             co2Points.Clear();
-            chargePoints.Clear();
+            humidPoints.Clear();
+            tempPoints.Clear();
         }
 
         // need modify
@@ -115,7 +122,7 @@ namespace CO2Sensor
             co2Points.Add(p);
         }
 
-        public void AddChargePoint(DateTime t, double value)
+        public void AddHumidPoint(DateTime t, double value)
         {
             Point p = new Point();
             p.Y = value;
@@ -129,14 +136,38 @@ namespace CO2Sensor
             //{
             //    maxY = p.Y;
             //}
-            if (chargePoints.Count > 0)
+            if (humidPoints.Count > 0)
             {
-                if ((p.X - chargePoints[0].X) / UnitWidth >= ActualWidth)
+                if ((p.X - humidPoints[0].X) / UnitWidth >= ActualWidth)
                 {
-                    chargePoints.RemoveAt(0);
+                    humidPoints.RemoveAt(0);
                 }
             }
-            chargePoints.Add(p);
+            humidPoints.Add(p);
+        }
+
+        public void AddTempPoint(DateTime t, double value)
+        {
+            Point p = new Point();
+            p.Y = value;
+            p.X = t.Hour * 60 * 60 + t.Minute * 60 + t.Second;
+
+            //if (minY > p.Y)
+            //{
+            //    minY = p.Y;
+            //}
+            //if (maxY < p.Y)
+            //{
+            //    maxY = p.Y;
+            //}
+            if (tempPoints.Count > 0)
+            {
+                if ((p.X - tempPoints[0].X) / UnitWidth >= ActualWidth)
+                {
+                    tempPoints.RemoveAt(0);
+                }
+            }
+            tempPoints.Add(p);
         }
 
         public void DrawGraph()
@@ -153,7 +184,7 @@ namespace CO2Sensor
             int nowData = now.Hour * 60 * 60 + now.Minute * 60 + now.Second;
             int sinceData = nowData - (int)ActualWidth * UnitWidth;
             double co2UnitHeight = ActualHeight / co2MaxY;
-            double chargeUnitHeight = ActualHeight / chargeMaxY;
+            double humidUnitHeight = ActualHeight / humidMaxY;
 
             Line axis;
 
@@ -176,10 +207,10 @@ namespace CO2Sensor
             axis.Y2 = axis.Y1;
             axis.StrokeThickness = 1;
             
-            axis.Stroke = new SolidColorBrush(ShowChargeLevel ? HorizontalAxisColor: Co2AxisColor);
+            axis.Stroke = new SolidColorBrush(ShowHumidLevel ? HorizontalAxisColor: Co2AxisColor);
             Children.Add(axis);
 
-            if (ShowChargeLevel)
+            if (ShowHumidLevel)
             {
                 // |
                 // |
@@ -189,7 +220,7 @@ namespace CO2Sensor
                 axis.X2 = ActualWidth; // 330
                 axis.Y2 = ActualHeight * VerticalLevel;
                 axis.StrokeThickness = 1;
-                axis.Stroke = new SolidColorBrush(ChargeAxisColor);
+                axis.Stroke = new SolidColorBrush(HumidAxisColor);
                 Children.Add(axis);
             }
 
@@ -236,23 +267,23 @@ namespace CO2Sensor
             Canvas.SetLeft(tb, -10);
             Children.Add(tb);
 
-            if (ShowChargeLevel)
+            if (ShowHumidLevel)
             {
                 tb = new TextBlock();
                 tb.FontSize = 16;
-                tb.Text = "%";
+                tb.Text = "℃ %";
                 Canvas.SetLeft(tb, ActualWidth + 10);
-                Canvas.SetTop(tb, ActualHeight * VerticalLevel - (chargeTextY * chargeUnitHeight) - 15);
+                Canvas.SetTop(tb, ActualHeight * VerticalLevel - (humidTextY * humidUnitHeight) - 15);
                 Children.Add(tb);
 
-                for (double d = chargeMinY; d <= chargeMaxY; d += chargeStepY)
+                for (double d = humidMinY; d <= humidMaxY; d += humidStepY)
                 {
                     tb = new TextBlock();
                     tb.FontSize = 16;
                     tb.Text = String.Format("{0:0}", d);
                     Canvas.SetLeft(tb, ActualWidth + 10);
                     //Debug.WriteLine(ActualHeight * VerticalLevel - (d * unitHeight) - 10);
-                    Canvas.SetTop(tb, ActualHeight * VerticalLevel - (d * chargeUnitHeight) - 10);
+                    Canvas.SetTop(tb, ActualHeight * VerticalLevel - (d * humidUnitHeight) - 10);
                     Children.Add(tb);
                 }
             }
@@ -273,7 +304,8 @@ namespace CO2Sensor
             while (i < co2Points.Count && (valueX > ActualWidth || valueX < 0));
 
             double co2ValueY = ActualHeight * VerticalLevel - co2Points[0].Y * co2UnitHeight;
-            double chargeValueY = ActualHeight * VerticalLevel - chargePoints[0].Y * chargeUnitHeight;
+            double humidValueY = ActualHeight * VerticalLevel - humidPoints[0].Y * humidUnitHeight;
+            double tempValueY = ActualHeight * VerticalLevel - tempPoints[0].Y * humidUnitHeight;
 
             for (; i < co2Points.Count; i++)
             {
@@ -285,6 +317,7 @@ namespace CO2Sensor
                     line.X1 = valueX;
                     line.Y1 = co2ValueY;
                     valueX2 = ((co2Points[i].X - sinceData) % oneDayUnit) / UnitWidth;
+
                     co2ValueY = ActualHeight * VerticalLevel - co2Points[i].Y * co2UnitHeight;
                     line.X2 = valueX2;
                     line.Y2 = co2ValueY;
@@ -292,19 +325,33 @@ namespace CO2Sensor
                     line.Stroke = new SolidColorBrush(Co2DotColor);
                     Children.Add(line);
 
-                    if (ShowChargeLevel)
+                    if (ShowHumidLevel)
                     {
+                        // Humidity
                         line = new Line();
 
                         line.X1 = valueX;
-                        line.Y1 = chargeValueY;
-                        valueX = ((co2Points[i].X - sinceData) % oneDayUnit) / UnitWidth; 
+                        line.Y1 = humidValueY;
+                        //valueX2 = ((humidPoints[i].X - sinceData) % oneDayUnit) / UnitWidth; 
                         
-                        chargeValueY = ActualHeight * VerticalLevel - chargePoints[i].Y * chargeUnitHeight;
-                        line.X2 = valueX;
-                        line.Y2 = chargeValueY;
+                        humidValueY = ActualHeight * VerticalLevel - humidPoints[i].Y * humidUnitHeight;
+                        line.X2 = valueX2;
+                        line.Y2 = humidValueY;
                         line.StrokeThickness = 3; // 4;
-                        line.Stroke = new SolidColorBrush(ChargeDotColor);
+                        line.Stroke = new SolidColorBrush(HumidDotColor);
+                        Children.Add(line);
+
+                        // Temperature
+                        line = new Line();
+                        line.X1 = valueX;
+                        line.Y1 = tempValueY;
+                        //valueX2 = ((tempPoints[i].X - sinceData) % oneDayUnit) / UnitWidth;
+
+                        tempValueY = ActualHeight * VerticalLevel - tempPoints[i].Y * humidUnitHeight;
+                        line.X2 = valueX2;
+                        line.Y2 = tempValueY;
+                        line.StrokeThickness = 3; // 4;
+                        line.Stroke = new SolidColorBrush(TempDotColor);
                         Children.Add(line);
                     }
                     valueX = valueX2;

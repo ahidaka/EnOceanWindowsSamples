@@ -13,7 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Threading;
-using System.IO; /////////////////
+using System.IO;
 using System.IO.Ports;
 using System.Reflection;
 using System.Diagnostics;
@@ -46,8 +46,11 @@ namespace CO2Sensor
         private const double defaultCO2Calibration = 0.0;
         private const double defaultCO2Inclination = 10.0;
 
-        private const double defaultChargeCalibration = 0.0;
-        private const double defaultChargeInclination = 0.5;
+        private const double defaultHumidCalibration = 0.0;
+        private const double defaultHumidInclination = 0.5;
+
+        private const double defaultTempCalibration = 0.0;
+        private const double defaultTempInclination = 0.2;
 
         private const string labelCO2Title = "CO2 Sensor";
         private const string labelCO2SubTitle = "CO2";
@@ -56,8 +59,11 @@ namespace CO2Sensor
         private double co2Calibration = 0D;
         private double co2Inclination = 0D;
 
-        private double chargeCalibration = defaultChargeCalibration;
-        private double chargeInclination = defaultChargeInclination;
+        private double humidCalibration = defaultHumidCalibration;
+        private double humidInclination = defaultHumidInclination;
+
+        private double tempCalibration = defaultTempCalibration;
+        private double tempInclination = defaultTempInclination;
 
         //private readonly int defaultCO2ID = 0x04100178;
         //private readonly int defaultCO2ID = 0x04100163;
@@ -72,20 +78,25 @@ namespace CO2Sensor
         private double[] co2s = new double[maxCO2s];
         private int co2Index = 0;
 
-        private const int maxCharges = 128;
-        private double[] charges = new double[maxCharges];
-        private int chargeIndex = 0;
+        private const int maxHumids = 128;
+        private double[] humids = new double[maxHumids];
+        private int humidIndex = 0;
 
-        private const string configDir = @"\YAMAHA\CO2 Sensor\";
+        private const int maxTemps = 255;
+        private double[] temps = new double[maxHumids];
+        private int tempIndex = 0;
 
-        private readonly int debug = 0; // 1; //0; // //1; ////////
+        private const string configDir = @"\DEVDRV\CO2 Sensor\";
+
+        private readonly int debug = 1; // 1; //0; // //1; ////////
         private readonly bool noRegistory = true;
 
         public struct CO2Data
         {
             public DateTime Timestamp;
             public double CO2; // CO2 ppm
-            public double Charge; // Level percent
+            public double Humid; // Level percent
+            public double Temp; // Temp Celsius
             public bool Redraw;
         }
 
@@ -197,17 +208,30 @@ namespace CO2Sensor
             return co2;
         }
 
-        private double ChargeGauge(uint u)
+        private double HumidGauge(uint u)
         {
-            double charge = chargeInclination * u + chargeCalibration;
+            double humid = humidInclination * u + humidCalibration;
 
-            charges[chargeIndex] = charge;
-            chargeIndex = (chargeIndex + 1) & (maxCharges - 1);
+            humids[humidIndex] = humid;
+            humidIndex = (humidIndex + 1) & (maxHumids - 1);
 
             if (debug > 0)
-                Debug.WriteLine("added index:" + chargeIndex + "charge:" + charge);
+                Debug.WriteLine("added index:" + humidIndex + "humid:" + humid);
 
-            return charge;
+            return humid;
+        }
+
+        private double TempGauge(uint u)
+        {
+            double temp = tempInclination * u + tempCalibration;
+
+            temps[tempIndex] = temp;
+            tempIndex = (tempIndex + 1) & (maxTemps - 1);
+
+            if (debug > 0)
+                Debug.WriteLine("added index:" + tempIndex + "temp:" + temp);
+
+            return temp;
         }
 
         public void ReceiveDisplay()
@@ -349,7 +373,7 @@ namespace CO2Sensor
                     }
                     else
                     {
-                        Debug.Print("Unknown rorg = " + rorg);
+                        //Debug.Print("Unknown rorg = " + rorg);
                     }
                 }
                 else if (packetType == PacketType.Response)
@@ -366,7 +390,7 @@ namespace CO2Sensor
                 else
                 {
                     // We ignore other type.
-                    Debug.Print("We ignore other type:" + packetType);
+                    //Debug.Print("We ignore other type:" + packetType);
 
                     return;
                 }
@@ -413,7 +437,7 @@ namespace CO2Sensor
                 {
                     inputValue = (uint)data[0];  // Humidity as Voltage: data[0] //
                     inputValue2 = (uint)data[1]; // Concentration: data[1] //
-                    inputValue3 = (uint)data[2]; // Not used Tempareture: data[2] //
+                    inputValue3 = (uint)data[2]; // Tempareture: data[2] //
                     inputChoice = (uint)data[3]; // Not used Choise: data[3] //
 
                     if (debug > 1)
@@ -460,12 +484,14 @@ namespace CO2Sensor
                             Debug.Print("4BS CO2");
 
                         int value = (int)(inputValue2) * 10;
-                        string co2 = value.ToString() + " ppm, ";
+                        string co2 = value.ToString() + "ppm ";
                         value = (int)(inputValue) / 2;
-                        co2 += value.ToString() + "%";
+                        co2 += value.ToString() + "% ";
+                        value = (int)(inputValue3) * 5;
+                        co2 += value.ToString() + "℃";
 
                         Debug.Print(co2);
-                        DisplayCO2(inputValue2, inputValue);
+                        DisplayCO2(inputValue2, inputValue, inputValue3);
 
                     }
                     else if (rorg == 0x20) // RPS
@@ -487,7 +513,7 @@ namespace CO2Sensor
             }
         }
 
-        void DisplayCO2(uint inputCo2, uint inputCharge)
+        void DisplayCO2(uint inputCo2, uint inputHumid, uint inputTemp)
         {
             DateTime now = DateTime.Now;
             TimeSpan ts = now - currentDt;
@@ -506,7 +532,8 @@ namespace CO2Sensor
 
             onDisplay.WaitOne();
             double co2 = CO2Gauge(inputCo2);
-            double charge = ChargeGauge(inputCharge);
+            double humid = HumidGauge(inputHumid);
+            double temp = TempGauge(inputTemp);
 
             string co2Text = String.Format("{0} ppm", co2);
             string timeText = now.ToString("T");
@@ -521,7 +548,8 @@ namespace CO2Sensor
             CO2Data t;
             t.Timestamp = now;
             t.CO2 = co2;
-            t.Charge = charge;
+            t.Humid = humid;
+            t.Temp = temp;
             t.Redraw = false;
 
             Dispatcher.BeginInvoke(
@@ -558,7 +586,8 @@ namespace CO2Sensor
             CO2Data co2;
             co2.Timestamp = now;
             co2.CO2 = -999;
-            co2.Charge = -999;
+            co2.Humid = -999;
+            co2.Temp = -999;
             co2.Redraw = true;
 
             Dispatcher.BeginInvoke(
@@ -604,14 +633,16 @@ namespace CO2Sensor
 
                 //tbX.Text = String.Format("{0:0.000}", t.);
                 gpX.AddCo2Point(t.Timestamp, t.CO2);
-                gpX.AddChargePoint(t.Timestamp, t.Charge);
+                gpX.AddHumidPoint(t.Timestamp, t.Humid);
+                gpX.AddTempPoint(t.Timestamp, t.Temp);
 
                 String logLine = t.Timestamp.ToString("T") + " " +
                     String.Format("{0}", t.CO2) + "ppm";
 
                 if (true)
                 {
-                    logLine += " " + String.Format("{0}", t.Charge) + "%";
+                    logLine += " " + String.Format("{0}", t.Humid) + "%";
+                    logLine += " " + String.Format("{0}", t.Temp) + "℃";
                 }
                 logLine += "\r\n";
                 textBox2.Text += logLine;
@@ -674,14 +705,14 @@ namespace CO2Sensor
 
         private void button2_Click(object sender, RoutedEventArgs e)
         {
-            if (!gpX.ShowChargeLevel)
+            if (!gpX.ShowHumidLevel)
             {
-                gpX.ShowChargeLevel = true;
+                gpX.ShowHumidLevel = true;
                 button2.FontWeight = FontWeights.Bold;
             }
             else
             {
-                gpX.ShowChargeLevel = false;
+                gpX.ShowHumidLevel = false;
                 button2.FontWeight = FontWeights.Regular;
             }
             RedrawCO2();
@@ -937,7 +968,7 @@ namespace CO2Sensor
 
         string getRegistory(string rGetValueName)
         {
-            string rKeyName = @"SOFTWARE\YAMAHA\CO2 Sensor";
+            string rKeyName = @"SOFTWARE\DEVDRV\CO2 Sensor";
             string s = null;
 
             try
